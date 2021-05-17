@@ -5,7 +5,8 @@ output:
     keep_md: true
 ---
 Load in the required libraries:
-``` {r message = FALSE}
+
+```r
 library(dplyr)
 library(ggplot2)
 ```
@@ -15,7 +16,8 @@ library(ggplot2)
 With the *activity.csv* file in the working directory, we read it into R.
 We then transform the date column from *character* type to *POSIXct* type for better graphing.
 
-``` {r}
+
+```r
 data <- read.csv("activity.csv")
 data <- transform(data, date = as.POSIXct(date, format = "%Y-%m-%d"))
 ```
@@ -24,29 +26,42 @@ data <- transform(data, date = as.POSIXct(date, format = "%Y-%m-%d"))
 
 After removing NA values, we calculate the total number of steps taken per day, presenting it in a histogram.
 
-``` {r}
+
+```r
 data_noNA <- data[!is.na(data$steps), ]
 total_steps_per_day <- tapply(data_noNA$steps, data_noNA$date, sum)
 hist(total_steps_per_day, xlab = "Total number of steps per day", main = "Histogram of total steps per day")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+```r
 mean <- mean(total_steps_per_day)
 median <- median(total_steps_per_day)
 ```
-We also calculate that the mean and median total number of steps per day is `r format(mean, scientific=FALSE)` and `r format(median, scientific=FALSE)` respectively.
+We also calculate that the mean and median total number of steps per day is 10766.19 and 10765 respectively.
 
 ## What is the average daily activity pattern?
 Here we calculate the number of steps for each interval, averaged across all days, then create a time-series plot.
-``` {r}
+
+```r
 mean_steps_per_interval <- tapply(data_noNA$steps, data_noNA$interval, mean)
 plot(as.integer(names(mean_steps_per_interval)), mean_steps_per_interval, type = "l",
      xlab = "Interval", ylab = "Average steps per interval")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
+```r
 max_interval <- names(mean_steps_per_interval)[which.max(mean_steps_per_interval)]
 ```
-We calculate the `r max_interval` interval as the interval with the highest average step count.
+We calculate the 835 interval as the interval with the highest average step count.
 
 ## Imputing missing values
 
 We impute the missing values by assigning it the value of the interval mean.
-``` {r}
+
+```r
 total_NA <- sum(!complete.cases(data))
 data_per_interval <- split(data, data$interval)
 for (i in seq_along(data_per_interval)) {
@@ -57,22 +72,29 @@ for (i in seq_along(data_per_interval)) {
 data_imputed <- as.data.frame(bind_rows(data_per_interval))
 ```
 
-`r total_NA` missing values were imputed.  
+2304 missing values were imputed.  
 We repeat the code from the first part of the assignment:  
 
-``` {r}
+
+```r
 total_steps_per_day_imputed <- tapply(data_imputed$steps, data_imputed$date, sum)
 hist(total_steps_per_day_imputed, xlab = "Total number of steps per day", main = "Histogram of total steps per day")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+```r
 mean_imputed <- mean(total_steps_per_day_imputed)
 median_imputed <- median(total_steps_per_day_imputed)
 ```
-As we can see, the histogram remains relatively unchanged. The new mean and median are also nearly identical at `r format(mean_imputed, scientific=FALSE)` and `r format(median_imputed, scientific=FALSE)` respectively.
+As we can see, the histogram remains relatively unchanged. The new mean and median are also nearly identical at 10766.19 and 10766.19 respectively.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 Here, we split the imputed data by weekend/weekday. We can see there are minor differences in the average step patterns over the course of the day, but the overall pattern remains quite similar.
 
-``` {r}
+
+```r
 data_imputed$day.type <- factor(weekdays(data_imputed$date) %in% c("Saturday", "Sunday") + 1, labels = c("weekday", "weekend"))
 split_imputed <- split(data_imputed, data_imputed$day.type)
 data_weekday <- split_imputed$weekday
@@ -87,3 +109,5 @@ row.names(mean_steps_df) <- c()
 qplot(interval, mean_steps, data = mean_steps_df, facets = day.type ~ ., geom = "line",
       ylab = "Average number of steps per interval", xlab = "Interval")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
